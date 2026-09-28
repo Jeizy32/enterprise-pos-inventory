@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- LAYAR UTAMA KASIR -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-dark text-white fw-bold py-3">
+                <i class="fas fa-desktop me-2"></i> Terminal Kasir Point of Sales (POS)
+            </div>
+            <div class="card-body bg-light">
+                <!-- FORM SCAN BARCODE -->
+                <div class="input-group input-group-lg mb-4">
+                    <span class="input-group-text bg-white"><i class="fas fa-barcode"></i></span>
+                    <input type="text" class="form-control" id="inputScanKasir" placeholder="Scan Barcode atau Ketik Kode Barang..." autofocus>
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#modalQRKasir">
+                        <i class="fas fa-camera"></i> Kamera
+                    </button>
+                </div>
+
+                <!-- DAFTAR BELANJAAN -->
+                <div class="table-responsive bg-white rounded shadow-sm">
+                    <table class="table table-hover align-middle mb-0" id="tabelKeranjang">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Barang</th>
+                                <th>Harga</th>
+                                <th width="120px">Qty</th>
+                                <th>Subtotal</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="isiKeranjang">
+                            <!-- Data barang masuk sini lewat JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL PEMBAYARAN KANAN -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 bg-primary text-white text-end rounded-top">
+                <p class="mb-0 text-white-50 fw-bold">TOTAL BELANJA</p>
+                <h1 class="display-5 fw-bold mb-0" id="tampilTotal">Rp 0</h1>
+            </div>
+            <div class="card-body p-4 bg-white rounded-bottom">
+                <form id="formPembayaran">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fw-bold small">Uang Diterima (Rp)</label>
+                        <input type="number" class="form-control form-control-lg text-end fs-4" id="inputBayar" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted fw-bold small">Kembalian</label>
+                        <input type="text" class="form-control form-control-lg text-end fs-4 bg-light" id="inputKembalian" readonly>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3 shadow" id="btnProsesBayar" disabled>
+                        <i class="fas fa-print me-2"></i> PROSES TRANSAKSI
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Scanner QR Khusus Kasir -->
+<div class="modal fade" id="modalQRKasir" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="fas fa-camera me-2"></i> Scan Barcode Kasir</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="readerKasir" width="100%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Library Kamera -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+    $(document).ready(function() {
+        // 1. STATE MANAGEMENT: Variabel memori keranjang belanja
+        let keranjang = [];
+        let totalBelanja = 0;
+
+        // 2. FUNGSI RENDER: Nampilin array keranjang ke tabel HTML
+        function updateTampilanKeranjang() {
+            let html = '';
+            totalBelanja = 0;
+
+            keranjang.forEach((item, index) => {
+                let subtotal = item.harga * item.qty;
+                totalBelanja += subtotal;
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div class="fw-bold">${item.nama}</div>
+                            <small class="text-muted">${item.kode}</small>
+                        </td>
+                        <td>Rp ${item.harga.toLocaleString('id-ID')}</td>
+                        <td>
+                            <div class="input-group input-group-sm w-75">
+                                <button class="btn btn-outline-secondary btn-min" data-index="${index}">-</button>
+                                <input type="text" class="form-control text-center" value="${item.qty}" readonly>
+                                <button class="btn btn-outline-secondary btn-plus" data-index="${index}">+</button>
+                            </div>
+                        </td>
+                        <td class="fw-bold text-primary">Rp ${subtotal.toLocaleString('id-ID')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger btn-hapus-item" data-index="${index}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Tampilkan ke tabel
+            $('#isiKeranjang').html(html);
+            // Ubah angka raksasa di kanan
+            $('#tampilTotal').text('Rp ' + totalBelanja.toLocaleString('id-ID'));
+            
+            // Aktifkan/Matikan tombol bayar
+            if(totalBelanja > 0) {
+                $('#inputBayar').prop('disabled', false);
+            } else {
+                $('#inputBayar').prop('disabled', true).val('');
+                $('#inputKembalian').val('');
+                $('#btnProsesBayar').prop('disabled', true);
+            }
+        }
+
+        // 3. FUNGSI SCAN BARCODE (Pistol Kasir / Enter Manual)
+        $('#inputScanKasir').on('keypress', function(e) {
+            // Jika ditekan tombol ENTER (Kode ASCII 13)
+            if(e.which == 13) {
+                e.preventDefault();
+                let kode = $(this).val();
+                
+                if(kode === '') return;
+
+                // Tembak API Python buat nyari harga barang
+                fetch('/api/cek_barang/' + kode)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'found') {
+                            // Cek apakah barang udah ada di keranjang
+                            let index = keranjang.findIndex(k => k.kode === kode);
+                            if(index !== -1) {
+                                keranjang[index].qty += 1; // Kalau udah ada, tambah jumlahnya aja
+                            } else {
+                                // Kalau barang baru, masukin ke array keranjang
+                                keranjang.push({
+                                    kode: kode,
+                                    nama: data.nama_barang,
+                                    harga: data.harga, // Pastikan API lu udah ngirim harga!
+                                    qty: 1
+                                });
+                            }
+                            // Kosongin input scan, siap buat barang berikutnya
+                            $('#inputScanKasir').val('');
+                            updateTampilanKeranjang();
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Oops!', text: 'Barang tidak ditemukan!', timer: 1500 });
+                            $('#inputScanKasir').val('');
+                        }
+                    });
+            }
+        });
+
+        // 4. LOGIKA KEMBALIAN UANG
+        $('#inputBayar').on('input', function() {
+            let bayar = parseInt($(this).val()) || 0;
+            let kembali = bayar - totalBelanja;
+            
+            if(kembali >= 0 && totalBelanja > 0) {
+                $('#inputKembalian').val('Rp ' + kembali.toLocaleString('id-ID'));
+                $('#btnProsesBayar').prop('disabled', false);
+            } else {
+                $('#inputKembalian').val('Uang Kurang!');
+                $('#btnProsesBayar').prop('disabled', true);
+            }
+        });
+
+        // 5. PROSES TRANSAKSI (Nembak ke Backend)
+        $('#formPembayaran').on('submit', function(e) {
+            e.preventDefault(); // Cegah halaman refresh otomatis
+            
+            if (keranjang.length === 0) {
+                Swal.fire("Error", "Keranjang kosong!", "error");
+                return;
+            }
+
+            // Ambil nilai uang
+            let bayar = parseInt($('#inputBayar').val());
+            let kembali = bayar - totalBelanja;
+
+            // Bungkus keranjang jadi paket JSON
+            let payload = {
+                keranjang: keranjang,
+                total: totalBelanja,
+                bayar: bayar,
+                kembali: kembali
+            };
+
+            // Tembak paketnya ke Pipa API Flask
+            fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    // Munculin Faktur / Struk Sukses
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Transaksi Berhasil!',
+                        html: `
+                            <b>Nomor Faktur: ${data.nota}</b><br>
+                            Total Belanja: Rp ${totalBelanja.toLocaleString('id-ID')}<br>
+                            Uang Kembali: Rp ${kembali.toLocaleString('id-ID')}
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fas fa-print"></i> Cetak Struk',
+                        cancelButtonText: 'Tutup Saja',
+                        confirmButtonColor: '#198754'
+                    }).then((result) => {
+                        // JIKA TOMBOL CETAK DIKLIK, BUKA TAB BARU HALAMAN STRUK
+                        if (result.isConfirmed) {
+                            window.open('/struk/' + data.nota, '_blank');
+                        }
+                        // Bersihkan layar kasir buat pelanggan selanjutnya
+                        keranjang = [];
+                        updateTampilanKeranjang();
+                        $('#inputBayar').val('');
+                        $('#inputScanKasir').focus(); 
+                    });
+                } else {
+                    Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
+                }
+            });
+        });
+
+        // Event listener buat tombol + - dan hapus (karena tombol ini di-render dinamis)
+        $('#isiKeranjang').on('click', '.btn-plus', function() {
+            let idx = $(this).data('index');
+            keranjang[idx].qty += 1;
+            updateTampilanKeranjang();
+        });
+
+        $('#isiKeranjang').on('click', '.btn-min', function() {
+            let idx = $(this).data('index');
+            if(keranjang[idx].qty > 1) {
+                keranjang[idx].qty -= 1;
+            } else {
+                keranjang.splice(idx, 1); // Hapus kalau qty jadi 0
+            }
+            updateTampilanKeranjang();
+        });
+
+        $('#isiKeranjang').on('click', '.btn-hapus-item', function() {
+            keranjang.splice($(this).data('index'), 1);
+            updateTampilanKeranjang();
+        });
+
+        // ==========================================
+        // 5. LOGIKA KAMERA KASIR (Tambalan Baru)
+        // ==========================================
+        let html5QrcodeScannerKasir = new Html5QrcodeScanner("readerKasir", { fps: 10, qrbox: {width: 300, height: 150} }, false);
+
+        function onScanSuccessKasir(decodedText, decodedResult) {
+            // Matikan kamera & tutup pop-up
+            $('#modalQRKasir').modal('hide');
+            html5QrcodeScannerKasir.clear();
+            
+            // Masukkan angka ke kolom input kasir
+            $('#inputScanKasir').val(decodedText);
+            
+            // PAKSA SISTEM MENEKAN TOMBOL ENTER SECARA OTOMATIS
+            let eventEnter = $.Event("keypress");
+            eventEnter.which = 13; 
+            $('#inputScanKasir').trigger(eventEnter);
+        }
+
+        $('#modalQRKasir').on('shown.bs.modal', function () {
+            html5QrcodeScannerKasir.render(onScanSuccessKasir);
+        });
+
+        $('#modalQRKasir').on('hidden.bs.modal', function () {
+            html5QrcodeScannerKasir.clear();
+        });
+        
+    });
+</script>
+{% endblock %}

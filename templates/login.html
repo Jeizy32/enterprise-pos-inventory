@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Enterprise POS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Desain Background Ala Enterprise (Sleek Gray) */
+        body {
+            background-color: #f4f6f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        /* Glass/Shadow Card Modern */
+        .login-card {
+            max-width: 420px;
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            padding: 2.5rem;
+        }
+
+        /* Ikon Logo Perusahaan */
+        .brand-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: white;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 16px rgba(13, 110, 253, 0.2);
+        }
+
+        /* Form Input Interaktif */
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        }
+        
+        .btn-login {
+            padding: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <!-- Header & Logo -->
+        <div class="text-center mb-4">
+            <div class="brand-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-1">INVENTORI PRO</h4>
+            <p class="text-muted small">Enterprise Point of Sales System</p>
+        </div>
+
+        <!-- Notifikasi Error/Sukses -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show rounded-3 small">
+                        <i class="fas {{ 'fa-exclamation-circle' if category == 'error' else 'fa-check-circle' }} me-2"></i>{{ message }}
+                        <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Form Autentikasi dengan Floating Labels -->
+        <form action="{{ url_for('login') }}" method="POST">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control rounded-3" id="floatingUser" name="username" placeholder="Username" required autofocus>
+                <label for="floatingUser" class="text-muted"><i class="fas fa-user me-2"></i>Corporate ID / Username</label>
+            </div>
+            
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control rounded-3" id="floatingPassword" name="password" placeholder="Password" required>
+                <label for="floatingPassword" class="text-muted"><i class="fas fa-lock me-2"></i>Security Password</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-login w-100 shadow-sm mb-3">
+                Sign In <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </form>
+
+        <!-- Footer Link -->
+        <div class="text-center mt-4">
+            <span class="text-muted small">Akses sistem baru?</span> 
+            <a href="{{ url_for('register') }}" class="text-decoration-none fw-bold small text-primary ms-1">Daftar Kasir</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

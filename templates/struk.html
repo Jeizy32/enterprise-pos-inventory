@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Struk - {{ trx.nomor_nota }}</title>
+    <style>
+        /* CSS Khusus Printer Thermal 58mm */
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Font khas struk */
+            font-size: 12px;
+            width: 58mm; /* Lebar kertas kasir */
+            margin: 0 auto;
+            padding: 10px;
+            color: #000;
+        }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: bold; }
+        .border-dashed { border-bottom: 1px dashed #000; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        td { vertical-align: top; padding: 2px 0; }
+        .right { text-align: right; }
+        .logo { max-width: 50px; margin-bottom: 5px; }
+        
+        /* Menghilangkan URL dan sisa margin saat diprint browser */
+        @media print {
+            @page { margin: 0; }
+            body { margin: 0.5cm; }
+        }
+    </style>
+</head>
+<!-- window.print() akan otomatis memunculkan pop-up cetak saat web dibuka -->
+<body onload="window.print()">
+    
+    <!-- HEADER CUSTOM PERUSAHAAN -->
+    <div class="text-center">
+        <!-- Kalau ada logo, hilangkan komen di bawah ini dan panggil file gambarnya -->
+        <!-- <img src="{{ url_for('static', filename='logo_toko.png') }}" class="logo"> -->
+        <div class="fw-bold" style="font-size: 14px;">MINIMARKET SPBU GEUDONG</div>
+        <div>Jl. Medan - B. Aceh, Geudong</div>
+        <div>Telp: 0812-3456-7890</div>
+    </div>
+    
+    <div class="border-dashed"></div>
+    
+    <div>Nota  : {{ trx.nomor_nota }}</div>
+    <div>Tgl   : {{ trx.tanggal }}</div>
+    <div>Kasir : {{ session.username }}</div>
+    
+    <div class="border-dashed"></div>
+    
+    <!-- DAFTAR BARANG YANG DIBELI -->
+    <table>
+        {% for item in detail %}
+        <tr>
+            <td colspan="3" class="fw-bold">{{ item.nama_barang }}</td>
+        </tr>
+        <tr>
+            <!-- Hitung harga satuan = subtotal dibagi jumlah beli -->
+            <td>{{ item.jumlah_beli }} x {{ "{:,}".format(item.subtotal // item.jumlah_beli).replace(',','.') }}</td>
+            <td></td>
+            <td class="right">{{ "{:,}".format(item.subtotal).replace(',','.') }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <div class="border-dashed"></div>
+    
+    <!-- TOTAL BAYAR & KEMBALIAN -->
+    <table>
+        <tr>
+            <td class="fw-bold">TOTAL BELANJA</td>
+            <td class="fw-bold right">Rp {{ "{:,}".format(trx.total_belanja).replace(',','.') }}</td>
+        </tr>
+        <tr>
+            <td>TUNAI</td>
+            <td class="right">Rp {{ "{:,}".format(trx.bayar).replace(',','.') }}</td>
+        </tr>
+        <tr>
+            <td>KEMBALI</td>
+            <td class="right">Rp {{ "{:,}".format(trx.kembalian).replace(',','.') }}</td>
+        </tr>
+    </table>
+    
+    <div class="border-dashed"></div>
+    
+    <!-- FOOTER CUSTOM -->
+    <div class="text-center">
+        <div class="fw-bold">Terima kasih atas kunjungan Anda!</div>
+        <div>Barang yang sudah dibeli</div>
+        <div>tidak dapat ditukar/dikembalikan.</div>
+        <div style="margin-top: 15px; font-size: 10px;">Powered by Jeizy</div>
+    </div>
+    
+</body>
+</html>

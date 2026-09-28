@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white text-primary fw-bold py-3 d-flex justify-content-between align-items-center">
+        <div><i class="fas fa-history me-2"></i> Rekam Jejak (Audit Trail)</div>
+        <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Kembali ke Dashboard
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tabelAudit" class="table table-hover table-striped align-middle w-100">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID Transaksi</th>
+                        <th>Kode Barang</th>
+                        <th>Aktivitas</th>
+                        <th>Jumlah</th>
+                        <th>Waktu Eksekusi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in audit_data %}
+                    <tr>
+                        <td>#{{ item.id }}</td>
+                        <td><span class="badge bg-secondary">{{ item.kode_barang }}</span></td>
+                        <!-- Logika pewarnaan otomatis: Kalau ada kata "MASUK", warnanya hijau (success), kalau nggak merah (danger) -->
+                        <td class="fw-bold text-{{ 'success' if 'MASUK' in item.aksi else 'danger' }}">
+                            {{ item.aksi }}
+                        </td>
+                        <td>{{ item.jumlah }} Unit</td>
+                        <td class="small text-muted">{{ item.tanggal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Aktifkan tabel pintar dan urutkan otomatis dari data terbaru (ID paling besar)
+        $('#tabelAudit').DataTable({
+            "order": [[ 0, "desc" ]], 
+            "language": { "search": "Cari Riwayat:", "lengthMenu": "Tampil _MENU_ data" }
+        });
+    });
+</script>
+{% endblock %}

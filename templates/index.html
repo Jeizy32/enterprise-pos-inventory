@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Dashboard Analytics Cards -->
+<div class="row mb-4">
+    <!-- Kotak Biru: Total Jenis Barang -->
+    <div class="col-md-4">
+        <div class="card bg-primary text-white h-100 shadow-sm border-0">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                    <h6 class="text-uppercase mb-2" style="letter-spacing: 1px; font-size: 0.85rem;">Total Jenis Barang</h6>
+                    <h2 class="mb-0 fw-bold">{{ total_item }} Item</h2>
+                </div>
+                <!-- Ini ikonnya wok! Posisi aman di kanan -->
+                <i class="fas fa-box-open fa-3x" style="opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kotak Hijau: Total Fisik Stok -->
+    <div class="col-md-4">
+        <div class="card text-white h-100 shadow-sm border-0" style="background-color: #10b981;">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                    <h6 class="text-uppercase mb-2" style="letter-spacing: 1px; font-size: 0.85rem;">Total Fisik Stok</h6>
+                    <h2 class="mb-0 fw-bold">{{ total_stok }} Unit</h2>
+                </div>
+                <!-- Ikon Tumpukan Stok -->
+                <i class="fas fa-cubes fa-3x" style="opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kotak Merah: Stok Menipis -->
+    <div class="col-md-4">
+        <div class="card text-white h-100 shadow-sm border-0" style="background-color: #ef4444;">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                <div>
+                    <h6 class="text-uppercase mb-2" style="letter-spacing: 1px; font-size: 0.85rem;">Stok Menipis</h6>
+                    <h2 class="mb-0 fw-bold">{{ stok_kritis }} Peringatan</h2>
+                </div>
+                <!-- Ikon Warning -->
+                <i class="fas fa-exclamation-triangle fa-3x" style="opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BUNGKUS UTAMA (Baris / Row) -->
+<div class="row">
+    
+    <!-- KOLOM KIRI: Form Tambah-->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header py-3 bg-white text-primary fw-bold border-bottom-0">
+                <i class="fas fa-plus-circle me-1"></i> Form Barang Masuk
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('tambah') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Kode Barang</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="inputKodeBarang" name="kode_barang" placeholder="BRG-001" required>
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#modalQR">
+                                <i class="fas fa-qrcode"></i> Scan
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Nama Barang</label>
+                        <input type="text" class="form-control" name="nama_barang" placeholder="Nama item..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Kategori Barang</label>
+                        <select class="form-select" name="kategori" required>
+                            <option value="" disabled selected> Pilih Kategori </option>
+                            <option value="Beverages (Minuman)">Beverages (Air, Teh, Kopi, Soda)</option>
+                            <option value="Snacks & Biscuits">Snacks & Biscuits (Cemilan)</option>
+                            <option value="Groceries (Sembako)">Groceries (Beras, Gula, Minyak Goreng)</option>
+                            <option value="Dairy & Chilled">Dairy & Chilled (Susu, Yoghurt, Mentega)</option>
+                            <option value="Fresh Food">Fresh Food (Buah, Sayur, Daging Segar)</option>
+                            <option value="Personal Care">Personal Care (Sabun, Sampo, Pasta Gigi)</option>
+                            <option value="Home Care">Home Care (Pembersih Lantai, Detergen)</option>
+                            <option value="Packaging & Supplies">Packaging & Supplies (Plastik, Kantong, Kardus)</option>
+                        </select>
+                    </div>
+                    <!-- ...kodingan form stok lu yang lama... -->
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Harga Satuan (Rp)</label>
+                        <input type="number" class="form-control" name="harga" placeholder="Contoh: 3500" required>
+                    </div>
+
+                    <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold">Jumlah Stok Awal</label>
+                    <input type="number" class="form-control" name="stok" placeholder="Contoh: 100" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save me-1"></i> Simpan Data</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- KOLOM KANAN: Tabel Master -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header py-3 bg-white text-primary fw-bold border-bottom-0 d-flex justify-content-between align-items-center">
+                <div><i class="fas fa-database me-1"></i> Master Data Inventori</div>
+                <a href="{{ url_for('export_excel') }}" class="btn btn-sm btn-success"><i class="fas fa-file-excel me-1"></i> Export Excel</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="tabelInventori" class="table table-hover table-striped align-middle w-100">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Kode</th>
+                                <th>Nama Barang</th>
+                                <th>Kategori</th>
+                                <th>Harga</th>
+                                <th>Stok</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in barang %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ item.kode_barang }}</span></td>
+                                <td class="fw-bold">{{ item.nama_barang }}</td>
+                                <td>{{ item.kategori }}</td>
+                                <td>{{ item.harga }}</td>
+                                <td>
+                                    {% if item.stok < 10 %}
+                                        <span class="badge bg-danger rounded-pill">{{ item.stok }}</span>
+                                    {% else %}
+                                        <span class="badge bg-success rounded-pill">{{ item.stok }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('hapus', id=item.id) }}" method="POST" class="d-inline hapus-form">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-hapus" title="Hapus Data">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+<!-- Modal Scanner QR Code -->
+<div class="modal fade" id="modalQR" tabindex="-1" aria-labelledby="modalQRLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="modalQRLabel"><i class="fas fa-camera me-2"></i> Scan QR / Barcode</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <!-- Tempat kamera bakal dirender sama JavaScript -->
+                <div id="reader" width="100%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- 1. TEMPAT RAHASIA PESAN FLASK (Taruh di HTML, di luar tag script) -->
+<div id="flash-messages" style="display: none;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <span class="flash-data" data-category="{{ category }}" data-message="{{ message }}"></span>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<!-- ========================================== -->
+<!-- SUNTIKAN 1: Panggil Library Kamera dari Internet -->
+<!-- ========================================== -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<!-- 2. JAVASCRIPT MURNI (Sekarang VS Code lu nggak akan marah lagi) -->
+<script>
+    // $(document).ready() ini ibarat pintu gerbang.
+    // Semua kode di dalamnya baru jalan kalau web udah selesai dimuat 100%
+    $(document).ready(function() {
+        
+        // --- LOGIKA LAMA LU (Tabel & Notifikasi) ---
+        $('#tabelInventori').DataTable({
+            "language": { "search": "Cari Barang:", "lengthMenu": "Tampil _MENU_ data" }
+        });
+
+        $('.flash-data').each(function() {
+            let category = $(this).data('category');
+            let message = $(this).data('message');
+            
+            Swal.fire({
+                icon: category === 'success' ? 'success' : 'error',
+                title: category === 'success' ? 'Berhasil!' : 'Oops!',
+                text: message,
+                timer: 2500,
+                showConfirmButton: false
+            });
+        });
+
+        $('.btn-hapus').on('click', function(e) {
+            e.preventDefault();
+            let form = $(this).closest('form');
+            Swal.fire({
+                title: 'Yakin mau hapus?',
+                text: "Data yang dihapus tidak bisa dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) { form.submit(); }
+            });
+        });
+
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { 
+                fps: 10, 
+                qrbox: { width: 300, height: 150 }, // Area scan dilebarkan
+                rememberLastUsedCamera: true // Mengingat kamera terakhir biar gak bolak-balik minta izin
+            }, 
+            false
+        );
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // 1. Masukin kode ke form, tutup pop-up, matikan kamera
+            $('#inputKodeBarang').val(decodedText);
+            $('#modalQR').modal('hide');
+            html5QrcodeScanner.clear();             
+            
+            // 2. JURUS AJAX: Telepon Python API secara diam-diam
+            fetch('/api/cek_barang/' + decodedText)
+                .then(response => response.json()) // Tunggu jawaban Python
+                .then(data => {
+                    if(data.status === 'found') {
+                        // Kalau barang ketemu, isi form nama & kategori otomatis!
+                        $('input[name="nama_barang"]').val(data.nama_barang);
+                        $('select[name="kategori"]').val(data.kategori);
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Data Ditemukan!',
+                            text: data.nama_barang + ' berhasil dimuat otomatis.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        // Kalau barang baru / belum ada di database
+                        $('input[name="nama_barang"]').val('');
+                        $('select[name="kategori"]').prop('selectedIndex', 0);
+                        
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Barang Baru',
+                            text: 'Kode ' + decodedText + ' belum terdaftar. Silakan lengkapi data manual.',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Kalau tombol scan diklik dan pop-up terbuka, nyalakan kamera
+        $('#modalQR').on('shown.bs.modal', function () {
+            html5QrcodeScanner.render(onScanSuccess);
+        });
+
+        // Kalau pop-up ditutup paksa, matikan kamera
+        $('#modalQR').on('hidden.bs.modal', function () {
+            html5QrcodeScanner.clear();
+        });
+
+    });
+</script>
+{% endblock %}
